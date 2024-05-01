@@ -15,7 +15,7 @@ degree_index=0
 def photo_status(toShow: str):
 
     # Manual text
-    manual1 = "keypad : number, Q ~ T : distance, A ~ J : degree"
+    manual1 = "keypad : number, Q ~ T : distance, A ~ F & J ~ L : degree"
     manual2 = "Space : capture, ESC : quit"
 
     # Create a black image
@@ -46,7 +46,7 @@ def change_status():
     global numbers, distance, degree,numbers_index,distance_index,degree_index
     # key maps
     distance_map = ['q','w','e','r','t']
-    degree_map = ['a','s','d','f','g','h','j']
+    degree_map = ['a','s','d','f','j','k','l']
     # Change the status
     for i in range(10):
         if keyboard.is_pressed(str(i)):
@@ -104,7 +104,6 @@ def capture_photo():
     finally:
         pipeline.stop()
         
-
 
 capture_photo()
 cv2.destroyAllWindows()
