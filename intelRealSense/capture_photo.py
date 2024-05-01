@@ -74,7 +74,7 @@ def capture_photo():
         while True:
             # Change the status
             change_status()
-            fileName=numbers[numbers_index]+"_"+distance[distance_index]+"_"+degree[degree_index]+".png"
+            fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[degree_index]+".png"
             # show the status
             photo_status(fileName)
 
@@ -93,6 +93,7 @@ def capture_photo():
 
             # Save images
             if keyboard.is_pressed('space'):
+                print("Save the image: ",fileName)
                 cv2.imwrite(fileName, color_image)
 
             # Quit
