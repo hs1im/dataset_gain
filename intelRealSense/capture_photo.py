@@ -6,16 +6,21 @@ import keyboard
 # data label
 numbers=['0','1','2','3','4','5','6','7','8','9']
 numbers_index=0
-distance=['10cm','15cm','20cm','25cm','30cm']
+distance=['0cm','10cm','20cm','30cm','40cm','50cm','60cm','70cm','80cm','90cm','100cm','110cm','120cm','130cm','140cm','150cm','160cm','170cm','180cm']
 distance_index=0
-degree=['+45deg','+30deg','+15deg','0deg','-15deg','-30deg','-45deg']
+distance_sw=True
+degree=['+90deg','+80deg','+70deg','+60deg','+50deg','+40deg','+30deg','+20deg','+10deg','0deg','-10deg','-20deg','-30deg','-40deg','-50deg','-60deg','-70deg','-80deg','-90deg']
 degree_index=0
+degree_sw=True
+brightness=['LOW','MID','HIGH']
+brightness_index=0
+brightness_sw=True
 
 
 def photo_status(toShow: str):
 
     # Manual text
-    manual1 = "keypad : number, Q ~ T : distance, A ~ F & J ~ L : degree"
+    manual1 = "keypad : number, distance : Q,E degree : A,D brightness : Z,C"
     manual2 = "Space : capture, ESC : quit"
 
     # Create a black image
@@ -43,27 +48,61 @@ def photo_status(toShow: str):
     cv2.imshow("file status", image)
 
 def change_status():
-    global numbers, distance, degree,numbers_index,distance_index,degree_index
-    # key maps
-    distance_map = ['q','w','e','r','t']
-    degree_map = ['a','s','d','f','j','k','l']
+    global numbers, distance, degree,numbers_index,distance_index,degree_index,distance_sw,degree_sw,brightness,brightness_index,brightness_sw
+    
     # Change the status
+        # Change the number
     for i in range(10):
         if keyboard.is_pressed(str(i)):
             numbers_index = i
-    for i in range(5):
-        if keyboard.is_pressed(distance_map[i]):
-            distance_index = i
-    for i in range(7):
-        if keyboard.is_pressed(degree_map[i]):
-            degree_index = i
+        # Change the distance
+    if keyboard.is_pressed('e'):
+        if distance_sw:
+            distance_index = (distance_index + 1)%len(distance)
+            distance_sw = False
+    elif keyboard.is_pressed('q'):
+        if distance_sw:
+            distance_index = (distance_index - 1)
+            if distance_index < 0:
+                distance_index = len(distance)-1
+            distance_sw = False
+    else:
+        distance_sw = True
+        # Change the degree
+    if keyboard.is_pressed('d'):
+        if degree_sw:
+            degree_index = (degree_index + 1)%len(degree)
+            degree_sw = False
+    elif keyboard.is_pressed('a'):
+        if degree_sw:
+            degree_index = (degree_index - 1)
+            if degree_index < 0:
+                degree_index = len(degree)-1
+            degree_sw = False
+    else:
+        degree_sw = True
+        # Change the brightness
+    if keyboard.is_pressed('c'):
+        if brightness_sw:
+            brightness_index = (brightness_index + 1)%len(brightness)
+            brightness_sw = False
+    elif keyboard.is_pressed('z'):
+        if brightness_sw:
+            brightness_index = (brightness_index - 1)
+            if brightness_index < 0:
+                brightness_index = len(brightness)-1
+            brightness_sw = False
+    else:
+        brightness_sw = True
+
 
 def capture_photo():
     global numbers, distance, degree
-    # Configure realsense color streams
+    # Configure realsense color treams
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
+    #config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
     # Start streaming
     pipeline.start(config)
@@ -74,7 +113,7 @@ def capture_photo():
         while True:
             # Change the status
             change_status()
-            fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[degree_index]+".png"
+            fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[degree_index]+"_"+brightness[brightness_index]+".png"
             # show the status
             photo_status(fileName)
 
