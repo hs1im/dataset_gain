@@ -2,6 +2,13 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import keyboard
+import serial
+import time
+
+# arduino connection
+PORT = 'COM3'
+BAUDRATE = 9600
+arduino = serial.Serial(PORT, BAUDRATE)
 
 # data label
 numbers=['0','1','2','3','4','5','6','7','8','9']
@@ -15,6 +22,14 @@ degree_sw=True
 brightness=['LOW','MID','HIGH']
 brightness_index=0
 brightness_sw=True
+
+def send_command(command):
+    try:
+        # Send the command to the arduino
+        arduino.write(command.encode()) 
+        time.sleep(0.1)
+    except Exception as e:
+        print(f"Error sending command: {e}")
 
 
 def photo_status(toShow: str):
@@ -69,18 +84,18 @@ def change_status():
     else:
         distance_sw = True
         # Change the degree
-    if keyboard.is_pressed('d'):
-        if degree_sw:
-            degree_index = (degree_index + 1)%len(degree)
-            degree_sw = False
-    elif keyboard.is_pressed('a'):
-        if degree_sw:
-            degree_index = (degree_index - 1)
-            if degree_index < 0:
-                degree_index = len(degree)-1
-            degree_sw = False
-    else:
-        degree_sw = True
+    # if keyboard.is_pressed('d'):
+    #     if degree_sw:
+    #         degree_index = (degree_index + 1)%len(degree)
+    #         degree_sw = False
+    # elif keyboard.is_pressed('a'):
+    #     if degree_sw:
+    #         degree_index = (degree_index - 1)
+    #         if degree_index < 0:
+    #             degree_index = len(degree)-1
+    #         degree_sw = False
+    # else:
+    #     degree_sw = True
         # Change the brightness
     if keyboard.is_pressed('c'):
         if brightness_sw:
@@ -132,8 +147,17 @@ def capture_photo():
 
             # Save images
             if keyboard.is_pressed('space'):
-                for DIdx in range(degree):
-                    fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[DIdx]+"_"+brightness[brightness_index]+".png"
+                for DIdx in degree:
+                    # Capture the image first
+                    fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+DIdx+"_"+brightness[brightness_index]+".png"
+                    cv2.imwrite(fileName, color_image)
+
+                    # Rotate the motor
+                    if(DIdx == '+90deg'):
+                        send_command('r')
+                    else:
+                        send_command('s')
+                    time.sleep(0.2)
                 print("Save the image: ",fileName)
                 cv2.imwrite(fileName, color_image)
 
