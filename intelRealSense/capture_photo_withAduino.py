@@ -2,21 +2,24 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 import keyboard
-import serial
 import time
+import serial
 
-# arduino connection
+
+
+# Arduino serial port
 PORT = 'COM3'
 BAUDRATE = 9600
-arduino = serial.Serial(PORT, BAUDRATE)
+arduino = serial.Serial(port=PORT,baudrate=BAUDRATE)
+
 
 # data label
 numbers=['0','1','2','3','4','5','6','7','8','9']
 numbers_index=0
-distance=['0cm','10cm','20cm','30cm','40cm','50cm','60cm','70cm','80cm','90cm','100cm','110cm','120cm','130cm','140cm','150cm','160cm','170cm','180cm']
+distance=['0cm','5cm','10cm','15cm','20cm','25cm','30cm','35cm','40cm','45cm','50cm','55cm','60cm','65cm','70cm','75cm','80cm','85cm','90cm']
 distance_index=0
 distance_sw=True
-degree=['+90deg','+80deg','+70deg','+60deg','+50deg','+40deg','+30deg','+20deg','+10deg','0deg','-10deg','-20deg','-30deg','-40deg','-50deg','-60deg','-70deg','-80deg','-90deg']
+degree=['-90deg','-80deg','-70deg','-60deg','-50deg','-40deg','-30deg','-20deg','-10deg','0deg','+10deg','+20deg','+30deg','+40deg','+50deg','+60deg','+70deg','+80deg','+90deg']
 degree_index=0
 degree_sw=True
 brightness=['LOW','MID','HIGH']
@@ -63,7 +66,7 @@ def photo_status(toShow: str):
     cv2.imshow("file status", image)
 
 def change_status():
-    global numbers, distance, degree,numbers_index,distance_index,degree_index,distance_sw,degree_sw,brightness,brightness_index,brightness_sw
+    global numbers, distance, degree,numbers_index,distance_index,degree_index,distance_sw,degree_sw,brightness,brightness_index,brightness_sw,arduino
     
     # Change the status
         # Change the number
@@ -84,18 +87,28 @@ def change_status():
     else:
         distance_sw = True
         # Change the degree
-    # if keyboard.is_pressed('d'):
-    #     if degree_sw:
-    #         degree_index = (degree_index + 1)%len(degree)
-    #         degree_sw = False
-    # elif keyboard.is_pressed('a'):
-    #     if degree_sw:
-    #         degree_index = (degree_index - 1)
-    #         if degree_index < 0:
-    #             degree_index = len(degree)-1
-    #         degree_sw = False
-    # else:
-    #     degree_sw = True
+    if keyboard.is_pressed('d'):
+        if degree_sw:
+            
+            if (degree_index == len(degree)-1):
+                arduino.write('r'.encode())
+                degree_index = 0
+            else:
+                arduino.write('s'.encode())
+                degree_index = (degree_index + 1)
+            degree_sw = False
+    elif keyboard.is_pressed('a'):
+        if degree_sw:
+            
+            if degree_index == 0:
+                arduino.write('r'.encode())
+                degree_index = len(degree)-1
+            else:
+                arduino.write('b'.encode())
+                degree_index = (degree_index - 1)
+            degree_sw = False
+    else:
+        degree_sw = True
         # Change the brightness
     if keyboard.is_pressed('c'):
         if brightness_sw:
@@ -125,6 +138,8 @@ def capture_photo():
     # file name
     
     try:
+        n_sw=True
+        i_sw=True
         while True:
             # Change the status
             change_status()
@@ -147,19 +162,60 @@ def capture_photo():
 
             # Save images
             if keyboard.is_pressed('space'):
-                for DIdx in degree:
-                    # Capture the image first
-                    fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+DIdx+"_"+brightness[brightness_index]+".png"
-                    cv2.imwrite(fileName, color_image)
-
-                    # Rotate the motor
-                    if(DIdx == '+90deg'):
-                        send_command('r')
-                    else:
-                        send_command('s')
-                    time.sleep(0.2)
                 print("Save the image: ",fileName)
                 cv2.imwrite(fileName, color_image)
+
+            # Quick process (next)
+            if keyboard.is_pressed('n'):
+                if(degree_index == 0) and n_sw:
+                    n_sw = False
+                    for i in range(len(degree)-1):
+                        fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[i]+"_"+brightness[brightness_index]+".png"
+                        # Wait for a coherent pair of frames: depth and color
+                        frames = pipeline.wait_for_frames()
+                        color_frame = frames.get_color_frame()
+                        if not color_frame:
+                            continue
+
+                        # Convert images to numpy arrays
+                        color_image = np.asanyarray(color_frame.get_data())
+
+                        # Show images
+                        cv2.imshow('RealSense', color_image)
+                        cv2.waitKey(1)
+
+                        cv2.imwrite(fileName, color_image)
+                        arduino.write('s'.encode())
+                        time.sleep(7)
+                    
+                    # Wait for a coherent pair of frames: depth and color
+                    frames = pipeline.wait_for_frames()
+                    color_frame = frames.get_color_frame()
+                    if not color_frame:
+                        continue
+
+                    # Convert images to numpy arrays
+                    color_image = np.asanyarray(color_frame.get_data())
+
+                    # Show images
+                    cv2.imshow('RealSense', color_image)
+                    cv2.waitKey(1)
+
+                    fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[len(degree)-1]+"_"+brightness[brightness_index]+".png"
+                    cv2.imwrite(fileName, color_image)
+                    arduino.write('r'.encode())
+                    print("Save the image: ",fileName)
+            else:
+                n_sw = True
+
+            # Degree check
+            if(keyboard.is_pressed('i')):
+                if i_sw:
+                    i_sw = False
+                    arduino.write('i'.encode())
+            else:
+                i_sw = True
+                
 
             # Quit
             if keyboard.is_pressed('esc'):

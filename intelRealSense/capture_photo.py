@@ -132,8 +132,6 @@ def capture_photo():
 
             # Save images
             if keyboard.is_pressed('space'):
-                for DIdx in range(degree):
-                    fileName="Data/"+numbers[numbers_index]+"/"+distance[distance_index]+"_"+degree[DIdx]+"_"+brightness[brightness_index]+".png"
                 print("Save the image: ",fileName)
                 cv2.imwrite(fileName, color_image)
 
